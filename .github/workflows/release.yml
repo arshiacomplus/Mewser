@@ -1,0 +1,180 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release tag (e.g. v0.1.0)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  validate-tag:
+    name: Validate Release Tag
+    runs-on: ubuntu-22.04
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Validate and Extract Version
+        id: version
+        run: |
+          RAW_TAG="${{ github.event.inputs.tag_name }}"
+          if [ -z "$RAW_TAG" ]; then
+            RAW_TAG="${GITHUB_REF_NAME:-}"
+          fi
+          if [ -z "$RAW_TAG" ]; then
+            echo "::error::No release tag or tag_name input provided."
+            exit 1
+          fi
+          # Strictly validate Git tag: must match ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$
+          if [[ ! "$RAW_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Invalid release tag '$RAW_TAG'. Tag must start with 'v' and follow Semantic Versioning (e.g. v0.1.0 or v1.0.0-rc.1)."
+            exit 1
+          fi
+          VERSION="${RAW_TAG#v}"
+          echo "tag=${RAW_TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "[OK] Tag: ${RAW_TAG} -> Derived Package Version: ${VERSION}"
+
+  build-gateway:
+    name: Build Gateway Server Package (Linux x86_64)
+    needs: [validate-tag]
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-gnu
+
+      - name: Rust Dependency Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build Gateway Binary
+        run: cargo build --release --target x86_64-unknown-linux-gnu -p mewser-gateway
+
+      - name: Package Gateway Distribution
+        run: ./scripts/package-gateway.sh "${{ needs.validate-tag.outputs.version }}"
+
+      - name: Upload Gateway Release Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: gateway-release-artifacts
+          path: |
+            dist/gateway/mewser-gateway-${{ needs.validate-tag.outputs.version }}-linux-x86_64.tar.gz
+            dist/gateway/mewser-gateway-${{ needs.validate-tag.outputs.version }}-linux-x86_64.tar.gz.sha256
+            dist/gateway/mewser-gateway-linux-x86_64.tar.gz
+            dist/gateway/mewser-gateway-linux-x86_64.tar.gz.sha256
+
+  build-desktop:
+    name: Build Desktop Release Packages (Linux x86_64)
+    needs: [validate-tag]
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-gnu
+
+      - name: Rust Dependency Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install Desktop Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev \
+            libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev \
+            dpkg-dev
+
+      - name: Build Desktop Binary
+        run: cargo build --release --target x86_64-unknown-linux-gnu -p mewser-desktop
+
+      - name: Package Desktop Distribution (.deb and .tar.gz)
+        run: ./scripts/package-desktop.sh "${{ needs.validate-tag.outputs.version }}"
+
+      - name: Upload Desktop Release Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-release-artifacts
+          path: |
+            dist/desktop/mewser-desktop_${{ needs.validate-tag.outputs.version }}_amd64.deb
+            dist/desktop/mewser-desktop_${{ needs.validate-tag.outputs.version }}_amd64.deb.sha256
+            dist/desktop/mewser-desktop-${{ needs.validate-tag.outputs.version }}-linux-x86_64.tar.gz
+            dist/desktop/mewser-desktop-${{ needs.validate-tag.outputs.version }}-linux-x86_64.tar.gz.sha256
+            dist/desktop/mewser-desktop-linux-x86_64.tar.gz
+            dist/desktop/mewser-desktop-linux-x86_64.tar.gz.sha256
+
+  publish-release:
+    name: Publish GitHub Release
+    needs: [validate-tag, build-gateway, build-desktop]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download Gateway Release Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: gateway-release-artifacts
+          path: release-artifacts
+
+      - name: Download Desktop Release Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: desktop-release-artifacts
+          path: release-artifacts
+
+      - name: Generate Aggregated SHA256SUMS Manifest
+        run: |
+          cd release-artifacts
+          sha256sum *.tar.gz *.deb > SHA256SUMS
+          sha256sum -c SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Publish GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.validate-tag.outputs.tag }}
+          VERSION: ${{ needs.validate-tag.outputs.version }}
+        run: |
+          cat > RELEASE_NOTES.md <<EOF
+          # Mewser ${RELEASE_TAG}
+
+          Dual-mode resilient web browser and self-hosted Gateway server.
+
+          ## Release Artifacts
+
+          ### 1. Mewser Gateway (Linux Server x86_64)
+          * \`mewser-gateway-${VERSION}-linux-x86_64.tar.gz\` (and \`mewser-gateway-linux-x86_64.tar.gz\`): Standalone Gateway daemon for self-hosted VPS deployment alongside MasterDNS, with hardened systemd units and firewall isolation helpers.
+
+          ### 2. Mewser Desktop (Linux x86_64)
+          * \`mewser-desktop_${VERSION}_amd64.deb\`: Native Debian/Ubuntu package for desktop installation.
+          * \`mewser-desktop-${VERSION}-linux-x86_64.tar.gz\` (and \`mewser-desktop-linux-x86_64.tar.gz\`): Generic Linux distribution archive with launcher, desktop entry, scalable icon, and install/uninstall scripts.
+
+          ## Checksums (SHA-256)
+          \`\`\`text
+          $(cat release-artifacts/SHA256SUMS)
+          \`\`\`
+          EOF
+
+          gh release create "${RELEASE_TAG}" \
+            release-artifacts/* \
+            --title "Mewser ${RELEASE_TAG}" \
+            --notes-file RELEASE_NOTES.md

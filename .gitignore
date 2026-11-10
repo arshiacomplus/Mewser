@@ -1,0 +1,76 @@
+# Rust / Cargo
+target/
+.cargo/
+/.cargo-home/
+**/*.rs.bk
+*.cargo-ok
+
+# Release Distribution Artifacts
+dist/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+env/
+venv/
+ENV/
+
+# C# / .NET / Visual Studio
+bin/
+obj/
+.vs/
+*.user
+*.userosscache
+*.suo
+*.userprefs
+*.pidb
+*.booproj
+*.svclog
+
+# Android
+.gradle/
+build/
+local.properties
+*.apk
+*.aab
+*.ap_
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Linux C/C++ / Native build artifacts
+*.o
+*.so
+*.a
+*.out
+
+# Secrets, certificates, and credentials
+*.pem
+*.key
+*.pkcs12
+*.pfx
+*.p12
+*.crt
+*.csr
+.env
+.env.*
+!.env.example
+id_rsa*
+id_ed25519*
+*token*
+*secret*
+
+# IDE and Editor configs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.bak
+*.tmp
+*.log
+.DS_Store
+Thumbs.db

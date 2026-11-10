@@ -1,0 +1,62 @@
+[Unit]
+Description=Mewser Gateway Content Extraction Service
+Documentation=https://github.com/arshiacomplus/Mewser
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=mewser-gateway
+Group=mewser-gateway
+UMask=0077
+
+# Load environment configuration and credentials from a root-protected file (mode 0600)
+EnvironmentFile=/etc/mewser-gateway/gateway.env
+ExecStart=/usr/local/bin/mewser-gateway
+
+# Process lifecycle and recovery
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=15s
+KillMode=mixed
+KillSignal=SIGTERM
+
+# Process and privilege isolation
+NoNewPrivileges=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+# Filesystem protections
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectClock=true
+ProtectHostname=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+
+# Memory and execution restrictions
+MemoryDenyWriteExecute=true
+LockPersonality=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+
+# Network and namespace restrictions
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+
+# System call filtering for standard Linux server services
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+
+# Logging: handled by systemd-journald
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=mewser-gateway
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,23 @@
+{
+  "name": "mewser-gateway",
+  "version": "0.1.0",
+  "target": "x86_64-unknown-linux-gnu",
+  "format": "ELF 64-bit LSB pie executable",
+  "linkage": "dynamic",
+  "runtime_dependencies": [
+    "libc.so.6 (glibc >= 2.17)",
+    "libm.so.6",
+    "libgcc_s.so.1",
+    "/lib64/ld-linux-x86-64.so.2"
+  ],
+  "tls_backend": "rustls (embedded in binary, no OpenSSL runtime dependency)",
+  "features": [
+    "safe-html-extraction",
+    "ssrf-defense",
+    "bearer-token-auth",
+    "constant-time-token-validation",
+    "bounded-payload-and-timeouts",
+    "graceful-sigterm-shutdown"
+  ],
+  "build_date": "2026-11-09T09:10:04Z"
+}

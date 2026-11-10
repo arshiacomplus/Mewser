@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: CI Validation (Linux x86_64)
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Rust Dependency Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install Linux System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev \
+            libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev \
+            iptables \
+            systemd \
+            dpkg-dev
+
+      - name: Verify Code Formatting
+        run: cargo fmt -- --check
+
+      - name: Verify Clippy Lints
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Run Workspace Test Suite
+        run: cargo test --workspace
+
+      - name: Run Gateway Installer Verification Test Suite
+        run: ./tests/installer_verification_tests.sh
+
+      - name: Build Release Binaries
+        run: |
+          cargo build --release -p mewser-desktop
+          cargo build --release -p mewser-gateway
+
+      - name: Verify Package Distributions
+        run: |
+          ./scripts/package-gateway.sh
+          cd dist/gateway/linux-x86_64 && sha256sum -c SHA256SUMS
+          cd -
+          ./scripts/package-desktop.sh
+          cd dist/desktop && sha256sum -c SHA256SUMS

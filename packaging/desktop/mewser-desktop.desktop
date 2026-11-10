@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Mewser
+GenericName=Resilient Web Browser
+Comment=Dual-mode web browser with direct standard rendering and resilient text mode over DNS tunnels
+Exec=mewser-desktop %u
+Icon=mewser-desktop
+Terminal=false
+Categories=Network;WebBrowser;
+MimeType=text/html;text/xml;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;
+StartupNotify=true
+StartupWMClass=mewser-desktop

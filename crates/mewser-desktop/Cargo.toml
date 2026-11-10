@@ -1,0 +1,24 @@
+[package]
+name = "mewser-desktop"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+
+[[bin]]
+name = "mewser-desktop"
+path = "src/main.rs"
+
+[dependencies]
+mewser-core = { path = "../mewser-core" }
+mewser-gateway = { path = "../mewser-gateway" }
+mewser-cli = { path = "../mewser-cli" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+url = "2.5"
+libc = "0.2"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+gtk = { version = "0.18", features = ["v3_24"] }
+webkit2gtk = { version = "2.0", features = ["v2_40"] }
+glib = "0.18"
+gdk = "0.18"

@@ -1,0 +1,16 @@
+[package]
+name = "mewser-gateway"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+
+[dependencies]
+mewser-core = { path = "../mewser-core" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+ureq = { version = "2.10.1", default-features = false, features = ["tls", "gzip"] }
+scraper = { version = "0.29.0", default-features = false }
+url = "2.5"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"

@@ -1,0 +1,17 @@
+[package]
+name = "mewser-cli"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+
+[[bin]]
+name = "mewser"
+path = "src/main.rs"
+
+[dependencies]
+mewser-core = { path = "../mewser-core" }
+mewser-gateway = { path = "../mewser-gateway" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+url = "2.5"
+libc = "0.2"

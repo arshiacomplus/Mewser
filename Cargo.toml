@@ -1,0 +1,8 @@
+[workspace]
+members = [
+    "crates/mewser-core",
+    "crates/mewser-gateway",
+    "crates/mewser-cli",
+    "crates/mewser-desktop",
+]
+resolver = "2"

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e1e2e"/>
+      <stop offset="100%" stop-color="#11111b"/>
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f0ff"/>
+      <stop offset="50%" stop-color="#7000ff"/>
+      <stop offset="100%" stop-color="#ff007f"/>
+    </linearGradient>
+  </defs>
+  <!-- Background Rounded Tile -->
+  <rect x="8" y="8" width="112" height="112" rx="28" fill="url(#bgGrad)" stroke="#313244" stroke-width="2"/>
+
+  <!-- Stylized Cat Ears and Head Outline -->
+  <path d="M 32 88 L 32 50 L 46 62 L 82 62 L 96 50 L 96 88 Z" fill="none" stroke="url(#accentGrad)" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+
+  <!-- Resilient Radar / DNS Signal Arcs -->
+  <path d="M 44 42 A 28 28 0 0 1 84 42" fill="none" stroke="#00f0ff" stroke-width="4" stroke-linecap="round" opacity="0.85"/>
+  <path d="M 52 32 A 40 40 0 0 1 76 32" fill="none" stroke="#7000ff" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+
+  <!-- Eyes -->
+  <circle cx="48" cy="74" r="5" fill="#00f0ff"/>
+  <circle cx="80" cy="74" r="5" fill="#00f0ff"/>
+
+  <!-- Nose and Mouth -->
+  <path d="M 64 80 L 61 84 L 67 84 Z" fill="#ff007f"/>
+  <path d="M 61 86 Q 64 89 67 86" fill="none" stroke="#ff007f" stroke-width="2" stroke-linecap="round"/>
+</svg>
