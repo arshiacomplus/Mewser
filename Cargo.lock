@@ -739,7 +739,7 @@ dependencies = [
 
 [[package]]
 name = "mewser-cli"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "libc",
  "mewser-core",
@@ -751,11 +751,11 @@ dependencies = [
 
 [[package]]
 name = "mewser-core"
-version = "0.1.0"
+version = "0.1.1"
 
 [[package]]
 name = "mewser-desktop"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "gdk",
  "glib",
@@ -772,7 +772,7 @@ dependencies = [
 
 [[package]]
 name = "mewser-gateway"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "libc",
  "mewser-core",

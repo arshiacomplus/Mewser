@@ -39,9 +39,9 @@ sudo pacman -S gtk3 webkit2gtk-4.1 libsoup3
 ### Option 1: Debian/Ubuntu Native Package (`.deb`)
 
 ```bash
-sudo dpkg -i mewser-desktop_0.1.0_amd64.deb
+sudo dpkg -i mewser-desktop_0.1.1_amd64.deb
 # Or via apt to automatically install any missing dependencies:
-sudo apt install ./mewser-desktop_0.1.0_amd64.deb
+sudo apt install ./mewser-desktop_0.1.1_amd64.deb
 ```
 
 ### Option 2: Generic Linux Archive (`.tar.gz`)

@@ -142,16 +142,16 @@ else
 fi
 
 # -----------------------------------------------------------------------------
-# Check 9: Token secrecy in process arguments, status, and service unit
+# Check 9: Token secrecy in install output, status, and service unit
 # -----------------------------------------------------------------------------
 UNIT_CONTENT=$(cat "${MOCK_ROOT}/etc/systemd/system/mewser-gateway.service")
 STATUS_OUTPUT=$(MEWSER_SKIP_ROOT_CHECK=true MEWSER_TEST_ROOT_DIR="${MOCK_ROOT}" MEWSER_MOCK_SYSTEMD=true \
    "${INSTALLER}" status)
 
-if [[ "$UNIT_CONTENT" != *"$ORIG_TOKEN"* && "$STATUS_OUTPUT" != *"$ORIG_TOKEN"* ]]; then
-    pass "Check 9: Token is strictly isolated; not exposed in systemd ExecStart or status output"
+if [[ "$UNIT_CONTENT" != *"$ORIG_TOKEN"* && "$STATUS_OUTPUT" != *"$ORIG_TOKEN"* && "$OUT_4" != *"$ORIG_TOKEN"* ]]; then
+    pass "Check 9: Token is strictly isolated; not exposed in install output, systemd ExecStart, or status output"
 else
-    fail "Check 9: Token leaked into systemd unit file or status output"
+    fail "Check 9: Token leaked into install output, systemd unit file, or status output"
 fi
 
 # -----------------------------------------------------------------------------

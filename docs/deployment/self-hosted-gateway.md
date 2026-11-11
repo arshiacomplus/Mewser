@@ -132,27 +132,82 @@ Before installing, select one of the following topologies based on your MasterDN
 
 ---
 
-## 3. Obtaining and Verifying the Release Package
+## 3. Recommended Automated Installation: Official Bootstrap Installer
 
-Download or copy the release directory to the server:
+The simplest and recommended method to deploy the Gateway on a Linux server is the official bootstrap installer. It verifies release archive SHA-256 integrity against independent manifests, detects local network interfaces and 1:1 NAT environments, configures systemd service units, and generates a secure Bearer token.
 
-```bash
-cd /tmp
-tar -xzf mewser-gateway-linux-x86_64.tar.gz
-cd dist/gateway/linux-x86_64
-```
+### Safe Download, Inspection, and Execution
 
-Verify package integrity using the provided SHA256 checksums:
+To ensure software supply chain integrity and server safety, **never pipe download commands to bash** (`curl | bash`). Always download the standalone installer, verify its checksum, and inspect the script prior to execution:
 
 ```bash
-sha256sum -c SHA256SUMS
+# 1. Download official bootstrap installer and integrity manifest
+# (Available as a standalone versioned release asset starting with v0.1.1)
+curl -fsSL -O https://github.com/arshiacomplus/Mewser/releases/download/v0.1.1/install-gateway.sh
+curl -fsSL -O https://github.com/arshiacomplus/Mewser/releases/download/v0.1.1/SHA256SUMS
+
+# Verify SHA-256 checksum of the installer script
+sha256sum --ignore-missing -c SHA256SUMS
+
+# Alternatively, download directly from the repository main branch:
+# curl -fsSL -O https://raw.githubusercontent.com/arshiacomplus/Mewser/main/scripts/install-gateway.sh
+
+# 2. Inspect script content before execution (security best practice)
+less install-gateway.sh
+
+# 3. Make executable and run with root privileges
+chmod +x install-gateway.sh
+sudo ./install-gateway.sh
 ```
 
-Ensure all files report `OK`.
+> [!NOTE]
+> **Token Protection**: The generated 64-character Bearer token is saved exclusively to `/etc/mewser-gateway/gateway.env` (mode `0600` owned by `root:root`). The installer and status commands report token presence but never expose the actual secret in terminal logs. Retrieve the token explicitly using `sudo deploy-gateway.sh show-token`.
+
+### Automated Non-Interactive Deployment
+
+For headless scripts, CI pipelines, or cloud-init automation, pass the desired topology and non-interactive flags:
+
+```bash
+# Topology 1 (Fixed TCP - Recommended for all hosts, including 1:1 NAT cloud VMs):
+sudo ./install-gateway.sh -t fixed-tcp -y
+
+# Topology 2 (SOCKS5 + Firewall - Supported ONLY when public IPv4 is directly on local interface):
+sudo ./install-gateway.sh -t socks5 -i <SERVER_PUBLIC_IP> --confirm-firewall -y
+```
 
 ---
 
-## 4. Creating the Unprivileged Service Account
+## 4. Alternative: Deploying from Standalone Release Package (`deploy-gateway.sh`)
+
+If you prefer to download and verify the release archive manually:
+
+```bash
+cd /tmp
+# Download release archive and checksum manifest from GitHub Releases
+curl -fsSL -O https://github.com/arshiacomplus/Mewser/releases/download/v0.1.1/mewser-gateway-0.1.1-linux-x86_64.tar.gz
+curl -fsSL -O https://github.com/arshiacomplus/Mewser/releases/download/v0.1.1/mewser-gateway-0.1.1-linux-x86_64.tar.gz.sha256
+
+# Verify SHA-256 checksum before extraction
+sha256sum -c mewser-gateway-0.1.1-linux-x86_64.tar.gz.sha256
+
+# Extract package
+tar -xzf mewser-gateway-0.1.1-linux-x86_64.tar.gz
+
+# Run deployment installer:
+# For Topology 1 (Fixed TCP):
+sudo ./deploy-gateway.sh install -t fixed-tcp
+
+# For Topology 2 (SOCKS5):
+sudo ./deploy-gateway.sh install -t socks5 -i <SERVER_PUBLIC_IP> --confirm-firewall
+```
+
+---
+
+## 5. Manual Step-by-Step Installation (Reference Only)
+
+For operators who require manual installation without helper scripts:
+
+### A. Creating the Unprivileged Service Account
 
 Create a dedicated system account with no interactive login shell and no home directory:
 
@@ -283,11 +338,16 @@ sudo journalctl -u mewser-gateway.service -f
 
 ## 10. Testing Local Service Health
 
-From the server shell, test the unauthenticated `/health` endpoint:
+From the server shell, test the unauthenticated `/health` endpoint using the actual configured bind address:
 
 ```bash
-curl -i http://127.0.0.1:4040/health
+BIND_ADDR="$(grep -E "^MEWSER_GATEWAY_BIND=" /etc/mewser-gateway/gateway.env | cut -d= -f2- | tr -d '[:space:]')"
+curl -i "http://${BIND_ADDR}/health"
 ```
+
+> [!NOTE]
+> * For **Topology 1 (Fixed TCP)**, `BIND_ADDR` is `127.0.0.1:4040`.
+> * For **Topology 2 (SOCKS5)**, `BIND_ADDR` is `<SERVER_PUBLIC_IP>:4040`. On Topology 2 hosts, querying `127.0.0.1:4040` directly fails with connection refused because the listener is bound to the public IP (routed locally via `lo`).
 
 Expected response:
 ```http
@@ -301,7 +361,7 @@ Content-Length: 15
 Test extraction endpoint without authentication (must return HTTP 401 Unauthorized):
 
 ```bash
-curl -i -X POST http://127.0.0.1:4040/extract \
+curl -i -X POST "http://${BIND_ADDR}/extract" \
   -H "Content-Type: application/json" \
   -d '{"url":"https://example.com/"}'
 ```
@@ -314,7 +374,7 @@ HTTP/1.1 401 Unauthorized
 Test extraction endpoint with the valid Bearer token:
 
 ```bash
-curl -i -X POST http://127.0.0.1:4040/extract \
+curl -i -X POST "http://${BIND_ADDR}/extract" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer ${GW_TOKEN}" \
   -d '{"url":"https://example.com/"}'
@@ -329,56 +389,53 @@ Content-Type: application/json
 
 ---
 
-## 11. Configuring the Mewser Client
+## 11. Configuring the Mewser Desktop Client
 
-In your local Mewser client:
+In your local Mewser Desktop client:
 
 1. Open **Settings** -> **Resilient Gateway**.
-2. Set **Gateway Endpoint**:
-   - For Topology 1: `127.0.0.1:4040` (with Transport set to Fixed TCP).
-   - For Topology 2: `<SERVER_PUBLIC_IP>:4040` (with Transport set to SOCKS5).
+2. Configure your transport protocol according to your server topology:
+   - **For Topology 1 (Fixed TCP - Recommended)**:
+     - Set **Transport Protocol** to `Fixed TCP`.
+     - Set **Fixed TCP Listener** to `127.0.0.1:1080` (your local MasterDNS client listener).
+     - *Important*: Do NOT configure `127.0.0.1:4040` in the client. Port 4040 is on the remote VPS loopback; the desktop connects to `127.0.0.1:1080` locally, which tunnels requests directly to the VPS Gateway.
+   - **For Topology 2 (SOCKS5)**:
+     - Set **Transport Protocol** to `SOCKS5`.
+     - Set **SOCKS5 Proxy Address** to `127.0.0.1:1080`.
+     - Set **Remote Gateway** to `<SERVER_PUBLIC_IP>:4040`.
 3. In **Gateway Authentication**:
-   - Paste the generated token into the token field.
-   - Click **Save Settings**. The status badge updates to `● Configured (Vault)`.
-4. Click **Test Health**: Mewser queries `/health` across the active tunnel. A green checkmark confirms end-to-end connectivity.
+   - Paste the Bearer token (retrieved via `sudo deploy-gateway.sh show-token` on your server).
+   - Click **Save Settings**.
+4. In the browser navigation bar, switch the badge from `[Standard]` to `[Resilient]` to browse through your tunnel.
 
 ---
 
 ## 12. Updating the Gateway
 
-To update the Gateway to a newer release:
+To update the Gateway binary to a newer release while strictly preserving your authentication token and configuration:
 
-1. Download the new release package and verify checksums.
-2. Stop the service:
-   ```bash
-   sudo systemctl stop mewser-gateway.service
-   ```
-3. Overwrite the binary:
-   ```bash
-   sudo cp mewser-gateway /usr/local/bin/mewser-gateway
-   sudo chmod 755 /usr/local/bin/mewser-gateway
-   ```
-4. Start the service:
-   ```bash
-   sudo systemctl start mewser-gateway.service
-   ```
-5. Verify health:
-   ```bash
-   curl -s http://127.0.0.1:4040/health
-   ```
+```bash
+# Recommended: Using the official bootstrap installer
+curl -fsSL -O https://raw.githubusercontent.com/arshiacomplus/Mewser/main/scripts/install-gateway.sh
+chmod +x install-gateway.sh
+sudo ./install-gateway.sh --update
+
+# Or using the local control helper:
+sudo deploy-gateway.sh update
+```
+
+The update procedure creates an automatic backup of the existing binary. If candidate verification fails, the installer automatically rolls back to the previous working installation.
 
 ---
 
 ## 13. Safely Removing the Service
 
-To completely uninstall the service:
+To cleanly uninstall the Gateway daemon, remove systemd services, and delete binaries:
 
 ```bash
-sudo systemctl stop mewser-gateway.service
-sudo systemctl disable mewser-gateway.service
-sudo rm -f /etc/systemd/system/mewser-gateway.service
-sudo systemctl daemon-reload
-sudo rm -f /usr/local/bin/mewser-gateway
-sudo rm -rf /etc/mewser-gateway
-sudo userdel mewser-gateway
+# Uninstall service and binary (preserves configuration and credentials):
+sudo deploy-gateway.sh uninstall
+
+# To completely purge all configuration files and authentication tokens:
+sudo deploy-gateway.sh uninstall --purge-config
 ```

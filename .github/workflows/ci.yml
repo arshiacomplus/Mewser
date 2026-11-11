@@ -57,6 +57,7 @@ jobs:
         run: |
           ./scripts/package-gateway.sh
           cd dist/gateway/linux-x86_64 && sha256sum -c SHA256SUMS
+          cd "${GITHUB_WORKSPACE}/dist/gateway" && sha256sum -c SHA256SUMS
 
       - name: Package and Verify Desktop Distribution
         run: |
@@ -68,3 +69,6 @@ jobs:
 
       - name: Run Gateway Installer Verification Test Suite
         run: ./tests/installer_verification_tests.sh
+
+      - name: Run Gateway Bootstrap Installer Test Suite
+        run: ./tests/bootstrap_installer_tests.sh

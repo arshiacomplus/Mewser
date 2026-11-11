@@ -74,6 +74,10 @@ jobs:
             dist/gateway/mewser-gateway-${{ needs.validate-tag.outputs.version }}-linux-x86_64.tar.gz.sha256
             dist/gateway/mewser-gateway-linux-x86_64.tar.gz
             dist/gateway/mewser-gateway-linux-x86_64.tar.gz.sha256
+            dist/gateway/install-gateway-${{ needs.validate-tag.outputs.version }}.sh
+            dist/gateway/install-gateway-${{ needs.validate-tag.outputs.version }}.sh.sha256
+            dist/gateway/install-gateway.sh
+            dist/gateway/install-gateway.sh.sha256
 
   build-desktop:
     name: Build Desktop Release Packages (Linux x86_64)
@@ -144,7 +148,7 @@ jobs:
       - name: Generate Aggregated SHA256SUMS Manifest
         run: |
           cd release-artifacts
-          sha256sum *.tar.gz *.deb > SHA256SUMS
+          sha256sum *.tar.gz *.deb *.sh > SHA256SUMS
           sha256sum -c SHA256SUMS
           cat SHA256SUMS
 
@@ -163,6 +167,7 @@ jobs:
 
           ### 1. Mewser Gateway (Linux Server x86_64)
           * \`mewser-gateway-${VERSION}-linux-x86_64.tar.gz\` (and \`mewser-gateway-linux-x86_64.tar.gz\`): Standalone Gateway daemon for self-hosted VPS deployment alongside MasterDNS, with hardened systemd units and firewall isolation helpers.
+          * \`install-gateway-${VERSION}.sh\` (and \`install-gateway.sh\`): Standalone bootstrap installer script for automated release download, SHA-256 verification, and systemd service deployment.
 
           ### 2. Mewser Desktop (Linux x86_64)
           * \`mewser-desktop_${VERSION}_amd64.deb\`: Native Debian/Ubuntu package for desktop installation.

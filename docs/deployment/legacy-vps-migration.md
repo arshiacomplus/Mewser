@@ -31,11 +31,25 @@ The staging VPS currently hosts:
 
 ---
 
-## 3. Step-by-Step Operator Migration Procedure
+## 3. Operator Migration Procedures
 
-Execute these steps on the staging VPS:
+### Method 1: Automated Migration via Bootstrap Installer (Recommended)
 
-### Step 1: Download the Published Release Package
+Run the official bootstrap installer with the `--migrate` flag. It automatically detects the legacy layout, downloads the verified release package, preserves credentials and bind address, and migrates to canonical systemd units:
+
+```bash
+curl -fsSL -O https://raw.githubusercontent.com/arshiacomplus/Mewser/main/scripts/install-gateway.sh
+chmod +x install-gateway.sh
+sudo ./install-gateway.sh --migrate
+```
+
+---
+
+### Method 2: Manual Package Migration via `deploy-gateway.sh`
+
+If you prefer to download and verify the release archive manually:
+
+#### Step 1: Download the Published Release Package
 
 From the latest GitHub Release:
 

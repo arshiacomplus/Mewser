@@ -18,7 +18,7 @@ set -euo pipefail
 set +x
 
 SCRIPT_NAME="deploy-gateway.sh"
-VERSION="0.1.0"
+VERSION="0.1.1"
 
 TEST_ROOT_DIR="${MEWSER_TEST_ROOT_DIR:-}"
 
@@ -845,18 +845,17 @@ display_client_handoff() {
     fi
     echo ""
 
+    echo "  3. Gateway Authentication Token:"
     if [[ "$is_new_install" == "true" ]]; then
-        echo "  3. Gateway Authentication Token:"
-        echo "     ================================================================"
-        echo "     ${token}"
-        echo "     ================================================================"
-        echo "     Copy this token into 'Gateway Authentication Token' in Mewser."
-        echo "     (Stored in ${CONFIG_FILE} mode 0600 owned by root:root)."
-        echo "     To view it again later, run: sudo ./${SCRIPT_NAME} show-token"
+        echo "     [Configured & Protected]"
+        echo "     A secure 64-character Bearer token has been generated and safely stored in:"
+        echo "       ${CONFIG_FILE} (mode 0600 owned by root:root)"
     else
-        echo "  3. Gateway Authentication Token: [Preserved Existing Token]"
-        echo "     To display the existing token, run: sudo ./${SCRIPT_NAME} show-token"
+        echo "     [Preserved Existing Token]"
+        echo "     Active token preserved in ${CONFIG_FILE}."
     fi
+    echo "     To securely view this token for client configuration, run:"
+    echo "       sudo ./${SCRIPT_NAME} show-token"
     echo ""
     echo "======================================================================"
 }

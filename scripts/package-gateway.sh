@@ -61,6 +61,9 @@ chmod 0755 "${PKG_DIR}/mewser-gateway"
 cp -f "${REPO_ROOT}/scripts/deploy-gateway.sh" "${PKG_DIR}/deploy-gateway.sh"
 chmod 0755 "${PKG_DIR}/deploy-gateway.sh"
 
+cp -f "${REPO_ROOT}/scripts/install-gateway.sh" "${PKG_DIR}/install-gateway.sh"
+chmod 0755 "${PKG_DIR}/install-gateway.sh"
+
 cp -f "${REPO_ROOT}/packaging/gateway/systemd/mewser-gateway.service" "${PKG_DIR}/mewser-gateway.service"
 chmod 0644 "${PKG_DIR}/mewser-gateway.service"
 
@@ -84,7 +87,7 @@ sed -i -E 's/"version": "[^"]+"/"version": "'"${VERSION}"'"/' "${PKG_DIR}/build-
 echo "[INFO] Generating package SHA256SUMS..."
 (
     cd "${PKG_DIR}"
-    sha256sum build-metadata.json deploy-gateway.sh gateway.env.example LICENSE mewser-gateway mewser-gateway.service README.md > SHA256SUMS
+    sha256sum build-metadata.json deploy-gateway.sh gateway.env.example install-gateway.sh LICENSE mewser-gateway mewser-gateway.service README.md > SHA256SUMS
     sha256sum -c SHA256SUMS
 )
 
@@ -95,12 +98,21 @@ echo "[INFO] Packaging ${TARBALL_VERSIONED}..."
 tar -czf "${TARBALL_VERSIONED}" -C "${PKG_DIR}" .
 cp -f "${TARBALL_VERSIONED}" "${TARBALL_ALIAS}"
 
-# 5. Generate and verify archive checksums
+# 5. Copy standalone bootstrap installer assets to release distribution
+BOOTSTRAP_VERSIONED="${DIST_DIR}/install-gateway-${VERSION}.sh"
+BOOTSTRAP_ALIAS="${DIST_DIR}/install-gateway.sh"
+cp -f "${REPO_ROOT}/scripts/install-gateway.sh" "${BOOTSTRAP_VERSIONED}"
+cp -f "${REPO_ROOT}/scripts/install-gateway.sh" "${BOOTSTRAP_ALIAS}"
+chmod 0755 "${BOOTSTRAP_VERSIONED}" "${BOOTSTRAP_ALIAS}"
+
+# 6. Generate and verify release distribution checksums
 (
     cd "${DIST_DIR}"
     sha256sum "mewser-gateway-${VERSION}-linux-x86_64.tar.gz" > "mewser-gateway-${VERSION}-linux-x86_64.tar.gz.sha256"
     sha256sum "mewser-gateway-linux-x86_64.tar.gz" > "mewser-gateway-linux-x86_64.tar.gz.sha256"
-    sha256sum "mewser-gateway-${VERSION}-linux-x86_64.tar.gz" "mewser-gateway-linux-x86_64.tar.gz" > SHA256SUMS
+    sha256sum "install-gateway-${VERSION}.sh" > "install-gateway-${VERSION}.sh.sha256"
+    sha256sum "install-gateway.sh" > "install-gateway.sh.sha256"
+    sha256sum "mewser-gateway-${VERSION}-linux-x86_64.tar.gz" "mewser-gateway-linux-x86_64.tar.gz" "install-gateway-${VERSION}.sh" "install-gateway.sh" > SHA256SUMS
     sha256sum -c SHA256SUMS
 )
 

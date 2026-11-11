@@ -1,6 +1,6 @@
 {
   "name": "mewser-gateway",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "target": "x86_64-unknown-linux-gnu",
   "format": "ELF 64-bit LSB pie executable",
   "linkage": "dynamic",
