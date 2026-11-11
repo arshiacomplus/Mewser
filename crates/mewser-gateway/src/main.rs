@@ -64,8 +64,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(unix)]
     {
         unsafe {
-            libc::signal(libc::SIGINT, sig_handler as usize);
-            libc::signal(libc::SIGTERM, sig_handler as usize);
+            libc::signal(libc::SIGINT, sig_handler as *const () as usize);
+            libc::signal(libc::SIGTERM, sig_handler as *const () as usize);
         }
 
         let (handle, join_handle) = server.spawn();
