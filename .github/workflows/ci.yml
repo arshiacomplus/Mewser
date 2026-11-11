@@ -48,21 +48,23 @@ jobs:
       - name: Verify Clippy Lints
         run: cargo clippy --workspace --all-targets -- -D warnings
 
-      - name: Run Workspace Test Suite
-        run: cargo test --workspace
-
-      - name: Run Gateway Installer Verification Test Suite
-        run: ./tests/installer_verification_tests.sh
-
       - name: Build Release Binaries
         run: |
           cargo build --release -p mewser-desktop
           cargo build --release -p mewser-gateway
 
-      - name: Verify Package Distributions
+      - name: Package and Verify Gateway Distribution
         run: |
           ./scripts/package-gateway.sh
           cd dist/gateway/linux-x86_64 && sha256sum -c SHA256SUMS
-          cd -
+
+      - name: Package and Verify Desktop Distribution
+        run: |
           ./scripts/package-desktop.sh
           cd dist/desktop && sha256sum -c SHA256SUMS
+
+      - name: Run Workspace Test Suite
+        run: cargo test --workspace
+
+      - name: Run Gateway Installer Verification Test Suite
+        run: ./tests/installer_verification_tests.sh
